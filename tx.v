@@ -11,7 +11,7 @@ module tx(
     input [7:0]i_tx_byte, //8-byte data to transmit
     output o_tx_act, //hight when it is transmitting
     output reg o_tx_serial, //serial output line
-    output tx_done //high for one clk when done tx
+    output o_tx_done //high for one clk when done tx
 );
 
 parameter CLKS_PER_BIT = 2;
@@ -80,6 +80,28 @@ always @(posedge i_clk) begin
     tx_stop_bit: begin
       o_tx_serial <= 1'b1;
       
+      if(r_Clock_Count < CLKS_PER_BIT - 1) begin
+        r_Clock_Count <= r_Clock_Count + 1;
+        current_state <= tx_stop_bit;
+      end
+      else begin
+        tx_done <= 1'b1;
+        r_Clock_Count <= 0;
+        current_state <= cleanup;
+        tx_active <= 1'b0;
+      end
     end
 
+    cleanup: begin
+      tx_done <= 1'b1;
+      current_state <= idle;
+    end
+
+    default: current_state <=idle;
+  endcase
 end
+
+assign o_tx_act = tx_active;
+assign o_tx_done = tx_done;
+
+endmodule
