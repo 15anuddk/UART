@@ -1,107 +1,125 @@
 `timescale 1ns / 1ps
 
-// Set Parameter CLKS_PER_BIT as follows:
-// CLKS_PER_BIT = (Frequency of i_Clock)/(Frequency of UART)
-// Example: 10 MHz Clock, 115200 baud UART
-// (10000000)/(115200) = 87
-
+//identify input output
 module tx(
-    input i_clk, //clock
-    input i_tx_dv,//datavalid : start transmitting
-    input [7:0]i_tx_byte, //8-byte data to transmit
-    output o_tx_act, //hight when it is transmitting
-    output reg o_tx_serial, //serial output line
-    output o_tx_done //high for one clk when done tx
+    input reset,
+    input [7:0] data,
+    input clk,
+    input tx_start,
+    output o_tx_active,
+    output reg serial_data,
+    output o_tx_done  
 );
 
-parameter CLKS_PER_BIT = 2;
-parameter idle = 3'b000; //FSM states
-parameter tx_start_bit = 3'b001;
-parameter tx_data_bits = 3'b010;
-parameter tx_stop_bit = 3'b011;
-parameter cleanup = 3'b100;
+parameter idle = 3'b000;
+parameter start_bit = 3'b001;
+parameter packet = 3'b010;
+parameter parity = 3'b011;
+parameter stop_bit = 3'b100;
 
-reg [2:0] current_state = 0;
+
+parameter clk_per_bit = 87;
+
+reg [2:0] current_state = 3'b000;
 reg [7:0] clock_count = 0;
 reg [2:0] bit_ind = 0;
 reg [7:0] tx_data = 0;
 reg tx_done =0;
 reg tx_active = 0;
+reg parity_bit = 0;
 
-always @(posedge i_clk) begin
+always @(posedge clk) begin
+if (reset) begin
+  current_state <= idle;
+    clock_count <= 0;
+    bit_ind <= 0;
+    tx_data <= 0;
+    tx_done <= 0;
+    tx_active <= 0;
+    parity_bit <= 0;
+    serial_data <= 1;
+end
+else begin
+  
+
   case(current_state)
-    idle: begin
-      o_tx_serial <= 1'b1; //high for idle
-      r_Tx_Done     <= 1'b0;
-      r_Clock_Count <= 0;
-      r_Bit_Index   <= 0;
+    
+    idle : begin
+      serial_data <= 1'b1;
+      tx_active <= 1'b0;
+      tx_done <= 1'b0;
 
-      if(i_tx_dv == 1'b1) begin //if data is valid
+      if(tx_start == 1'b1) begin
         tx_active <= 1'b1;
-        tx_data <= i_tx_byte;
-        current_state <= tx_start_bit;
+        tx_data <= data;
+        current_state <= start_bit;
       end
-      else current_state = idle;
     end //idle ended
 
-    tx_start_bit : begin
-      o_tx_serial <= 1'b0; //start bit is low
-
-      if(r_Clock_Count < CLKS_PER_BIT - 1) begin
-        r_Clock_Count <= r_Clock_Count + 1;
-        current_state <= tx_start_bit;
+    start_bit : begin
+      serial_data <= 1'b0; //start bit is low
+      if(clock_count < clk_per_bit -1) begin
+        clock_count <= clock_count + 1;
       end
       else begin
-        r_Clock_Count <= 0;
-        current_state <= tx_data_bits;
+        current_state <= packet;
+        clock_count <= 0;
       end
-    end // tx_data_bits ends
+    end // start_bit end
 
-    tx_data_bits: begin
-      o_tx_serial <= tx_data[bit_ind];
+    packet : begin
+      serial_data <= tx_data[bit_ind];
+      
 
-      if(r_Clock_Count < CLKS_PER_BIT - 1) begin
-        r_Clock_Count <= r_Clock_Count +1;
-        current_state <= tx_data_bits;
+      if(clock_count < clk_per_bit - 1) begin
+        clock_count <= clock_count + 1;
       end
       else begin
-        r_Clock_Count <= 0;
+        clock_count <= 1'b0;
+        parity_bit <= parity_bit ^ tx_data[bit_ind];
         if(bit_ind < 7) begin
           bit_ind <= bit_ind + 1;
-          current_state <= tx_data_bits;
+          current_state <= packet;
         end
         else begin
           bit_ind <= 0;
-          current_state <= tx_stop_bit;
+          current_state <= parity;
         end
       end
-    end//
+    end // packet tx done
 
-    tx_stop_bit: begin
-      o_tx_serial <= 1'b1;
-      
-      if(r_Clock_Count < CLKS_PER_BIT - 1) begin
-        r_Clock_Count <= r_Clock_Count + 1;
-        current_state <= tx_stop_bit;
+    parity: begin
+      serial_data <= parity_bit;
+      if(clock_count < clk_per_bit - 1) begin
+        clock_count <= clock_count + 1;
       end
       else begin
-        tx_done <= 1'b1;
-        r_Clock_Count <= 0;
-        current_state <= cleanup;
-        tx_active <= 1'b0;
+        clock_count <= 0;
+        current_state <= stop_bit;
       end
-    end
+    end //parity end
 
-    cleanup: begin
-      tx_done <= 1'b1;
-      current_state <= idle;
-    end
+    stop_bit : begin
+      serial_data <= 1'b1;
+       tx_done <= 1'b1;
+      if(clock_count < clk_per_bit -1) begin
+        clock_count <= clock_count + 1;
+      end
+      else begin
+        clock_count <= 0;
+        tx_done <= 0;
+        tx_active <= 0;
+        current_state <= idle;
+        parity_bit <= 0;
+      end
+    end // stop bit ended
 
-    default: current_state <=idle;
-  endcase
+    default: current_state <= idle;
+
+    endcase
 end
-
-assign o_tx_act = tx_active;
+end
+assign o_tx_active = tx_active;
 assign o_tx_done = tx_done;
 
 endmodule
