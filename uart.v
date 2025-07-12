@@ -1,44 +1,46 @@
 `timescale 1ns / 1ps
 
-module uart #(
-    parameter CLKS_PER_BIT = 87  // For 115200 baud with 10MHz clock
-)(
-    input        i_Clock,
-    input        i_Reset,
-    
-    // Transmitter Inputs
-    input        i_Tx_DV,
-    input  [7:0] i_Tx_Byte,
-    output       o_Tx_Active,
-    output       o_Tx_Serial,
-    output       o_Tx_Done,
+module uart_full_duplex(
+    input  wire       clk,
+    input  wire       reset,
 
-    // Receiver Inputs
-    input        i_Rx_Serial,
-    output       o_Rx_DV,
-    output [7:0] o_Rx_Byte
+    // UART interface
+    input  wire       rx_serial,       // Input serial line
+    output wire       tx_serial,       // Output serial line
+
+    // Transmit interface
+    input  wire       tx_start,        // Trigger to start transmission
+    input  wire [7:0] tx_data,         // Data to transmit
+    output wire       tx_active,       // TX is active
+    output wire       tx_done,         // TX is done
+
+    // Receive interface
+    output wire       rx_dv,           // Data valid
+    output wire [7:0] rx_data          // Received data
 );
 
-  // Transmitter instance
-  uart_tx #(
-    .CLKS_PER_BIT(CLKS_PER_BIT)
-  ) tx_inst (
-    .i_clk(i_Clock),
-    .i_Tx_DV(i_Tx_DV),
-    .i_Tx_Byte(i_Tx_Byte),
-    .o_Tx_Active(o_Tx_Active),
-    .o_Tx_Serial(o_Tx_Serial),
-    .o_Tx_Done(o_Tx_Done)
+  //----------------------------------------------------------
+  // TX Instance
+  //----------------------------------------------------------
+  tx uart_tx_inst (
+    .reset(reset),
+    .clk(clk),
+    .tx_start(tx_start),
+    .data(tx_data),
+    .o_tx_active(tx_active),
+    .serial_data(rx_serial),
+    .o_tx_done(tx_done)
   );
-
-  // Receiver instance
-  receiver #(
-    .CLKS_PER_BIT(CLKS_PER_BIT)
-  ) rx_inst (
-    .i_Clock(i_Clock),
-    .i_Rx_Serial(i_Rx_Serial),
-    .o_Rx_DV(o_Rx_DV),
-    .o_Rx_Byte(o_Rx_Byte)
+ 
+  //----------------------------------------------------------
+  // RX Instance
+  //----------------------------------------------------------
+  rx uart_rx_inst (
+    .clk(clk),
+    .reset(reset),
+    .serial_data(rx_serial),
+    .o_rx_dv(rx_dv),
+    .o_rx_data(rx_data)
   );
 
 endmodule

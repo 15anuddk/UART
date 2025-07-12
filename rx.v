@@ -121,7 +121,7 @@ always @(posedge clk) begin
   end
 end
 
-assign o_rx_data <= rx_data;
-assign o_rx_dv <= rx_dv;
+assign o_rx_data = rx_data;
+assign o_rx_dv = rx_dv;
 
 endmodule

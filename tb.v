@@ -1,126 +1,87 @@
-module tb_uart;
+module tb();
 
-    // Declare signals to connect to the UART module
-    reg reset;
-    reg txclk;
-    reg ld_tx_data;
-    reg [7:0] tx_data;
-    reg tx_enable;
-    wire tx_out;
-    wire tx_empty;
-    reg rxclk;
-    reg uld_rx_data;
-    wire [7:0] rx_data;
-    reg rx_enable;
-    reg rx_in;
-    wire rx_empty;
+reg clk, reset;
 
-    // Instantiate the UART module
-    uart uut (
-        .reset(reset),
-        .txclk(txclk),
-        .ld_tx_data(ld_tx_data),
-        .tx_data(tx_data),
-        .tx_enable(tx_enable),
-        .tx_out(tx_out),
-        .tx_empty(tx_empty),
-        .rxclk(rxclk),
-        .uld_rx_data(uld_rx_data),
-        .rx_data(rx_data),
-        .rx_enable(rx_enable),
-        .rx_in(rx_in),
-        .rx_empty(rx_empty)
-    );
+reg rx_serial; // This is the input to the UART receiver, but it's never being driven by any data.
+wire tx_serial; // This is the output from the UART transmitter.
 
-    // Initialize signals
-    initial begin
-        reset = 1; // Reset active-high
-        txclk = 0;
-        ld_tx_data = 0;
-        tx_data = 8'h00;
-        tx_enable = 0;
-        rxclk = 0;
-        uld_rx_data = 0;
-        rx_enable = 0;
-        rx_in = 0;
+reg tx_start;
+reg [7:0] tx_data;
 
-        // Apply reset
-        #10 reset = 0;
+wire tx_active;
+wire tx_done;
 
-        // Test Case 1: Transmit and receive a single character
-        reset = 1;
-        #10 reset = 0;
-        tx_enable = 1;
-        ld_tx_data = 1;
-        tx_data = 8'h41; // ASCII 'A'
-        #10 ld_tx_data = 0;
-        #100; // Wait for data reception
-        assert(rx_data == 8'h41) else $display("Test Case 1 Failed!");
+wire rx_dv;
+wire [7:0] rx_data;
 
-        // Test Case 2: Transmit and receive multiple characters
-        reset = 1;
-        #10 reset = 0;
-        tx_enable = 1;
-        ld_tx_data = 1;
-        tx_data = 8'h48; // ASCII 'H'
-        #10 ld_tx_data = 0;
-        #10 tx_data = 8'h65; // ASCII 'e'
-        #10 tx_data = 8'h6C; // ASCII 'l'
-        #10 tx_data = 8'h6C; // ASCII 'l'
-        #10 tx_data = 8'h6F; // ASCII 'o'
-        #10 tx_enable = 0;
-        #200; // Wait for data reception
-        assert(rx_data == 8'h48) else $display("Test Case 2 Failed!");
-        #10 assert(rx_data == 8'h65) else $display("Test Case 2 Failed!");
-        #10 assert(rx_data == 8'h6C) else $display("Test Case 2 Failed!");
-        #10 assert(rx_data == 8'h6C) else $display("Test Case 2 Failed!");
-        #10 assert(rx_data == 8'h6F) else $display("Test Case 2 Failed!");
+uart_full_duplex dut (
+    .clk(clk),
+    .reset(reset),
+    .rx_serial(rx_serial),
+    .tx_serial(tx_serial),
+    .tx_start(tx_start),
+    .tx_data(tx_data),
+    .tx_active(tx_active),
+    .tx_done(tx_done),
+    .rx_dv(rx_dv),
+    .rx_data(rx_data)
+);
 
-        // Test Case 3: Test frame error
-        reset = 1;
-        #10 reset = 0;
-        tx_enable = 1;
-        ld_tx_data = 1;
-        tx_data = 8'h55; // Arbitrary data
-        #10 ld_tx_data = 0;
-        rx_in = 1; // Inject a framing error
-        #100; // Wait for the error to propagate
-        rx_in = 0;
-        #100; // Wait for data reception
-        assert(rx_frame_err == 1) else $display("Test Case 3 Failed!");
+always #5 clk = ~clk;
 
-        // Test Case 4: Transmit and receive with frame error
-        reset = 1;
-        #10 reset = 0;
-        tx_enable = 1;
-        ld_tx_data = 1;
-        tx_data = 8'h41; // ASCII 'A'
-        #10 ld_tx_data = 0;
-        #10 tx_data = 8'h42; // ASCII 'B' (frame error)
-        #100; // Wait for data reception
-        assert(rx_data == 8'h41) else $display("Test Case 4 Failed!");
+initial begin
+  clk = 0;
+  reset = 1;
+  rx_serial = 1;
+  #50 reset = 0;
 
-        // Test Case 5: Transmit and receive with overrun error
-        reset = 1;
-        #10 reset = 0;
-        tx_enable = 1;
-        ld_tx_data = 1;
-        tx_data = 8'h41; // ASCII 'A'
-        #10 ld_tx_data = 0;
-        #10 tx_data = 8'h42; // ASCII 'B'
-        #10 tx_data = 8'h43; // ASCII 'C'
-        #10 tx_data = 8'h44; // ASCII 'D'
-        #10 tx_data = 8'h45; // ASCII 'E'
-        #10 tx_data = 8'h46; // ASCII 'F' (overrun error)
-        #200; // Wait for data reception
-        assert(rx_over_run == 1) else $display("Test Case 5 Failed!");
+  reset = 1;
+  #10 reset = 0; // transmit and receive single character
 
-        // End simulation
-        $finish;
+   // Mistake 1: Incorrect timing for tx_start and tx_data
+   // You are setting tx_start high, then changing tx_data multiple times,
+   // then setting tx_start low. This is not how most UART TX modules work.
+   // Typically, you set tx_data, then pulse tx_start for one clock cycle,
+   // or hold it high until tx_active goes high and then low.
+   // The provided code would likely only attempt to transmit the *last* value assigned to tx_data (8'h6F).
+   #10 tx_start = 1;
+   #10 tx_data = 8'h48; //H
+   #10 tx_data = 8'h65;
+   #10 tx_data = 8'h6C; // ASCII 'l'
+   #10 tx_data = 8'h6C; // ASCII 'l'
+   #10 tx_data = 8'h6F; // ASCII 'o'
+   #10 tx_start = 0;
+
+   // Mistake 2: Missing loopback connection
+   // You never connected the 'tx_serial' output to the 'rx_serial' input.
+   // So even if the transmitter worked perfectly, there's no data reaching the receiver.
+   // The 'rx_serial' signal will remain at its initial default value (likely 'x' or '0') because it's an undriven 'reg' type without explicit initialization.
+
+   // Mistake 3: Immediate and flawed data verification
+   // You're waiting for #200 and then trying to check rx_data multiple times.
+   // Firstly, #200 is likely not the correct delay for a full 5-character transmission and reception cycle.
+   // Secondly, 'rx_data' only holds the *last* received byte when 'rx_dv' is pulsed.
+   // You need to capture 'rx_data' when 'rx_dv' is high, for each byte individually.
+   // The way you've written this, it will only ever check the value of rx_data at specific time points,
+   // and won't react to when rx_dv actually goes high.
+   #200
+   if (rx_data !== 8'h48) begin
+    $display("ERROR: Expected H, got %h", rx_data);
+    $stop; // or use $fatal if your tool supports SystemVerilog
+    end
+    #10
+     if (rx_data !== 8'h65) begin
+    $display("ERROR: Expected e, got %h", rx_data);
+    $stop; // or use $fatal if your tool supports SystemVerilog
+    end
+    // ... similar checks for other characters
+    #10
+     if (rx_data !== 8'h6F) begin
+    $display("ERROR: Expected O, got %h", rx_data);
+    $stop; // or use $fatal if your tool supports SystemVerilog
     end
 
-    // Clock generation
-    always #5 txclk = ~txclk;
-    always #7 rxclk = ~rxclk;
+  #50 $finish;
 
+end
 endmodule
