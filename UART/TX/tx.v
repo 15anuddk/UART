@@ -1,10 +1,8 @@
 module tx(
     input reset,
     input send,
-    input clock,
-    input parity_type,
-    input data_in,
-
+    input sys_clk,
+    input [7:0] data_in,
     output data_tx,
     output active_flag,
     output  done_flag
@@ -19,7 +17,6 @@ baudgen unit1(.reset(reset),
 
 parity unit2(.reset(reset),
              .data_in(data_in),
-             .parity_type(parity_type)
              .parity_bit(parity_bit_w));
 
 piso unit3(.reset(reset),

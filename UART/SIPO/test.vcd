@@ -1,0 +1,181 @@
+$date
+	Wed Jul 16 19:27:58 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb $end
+$var wire 11 ! frame [10:0] $end
+$var wire 1 " done_flag $end
+$var wire 1 # active_flag $end
+$var reg 1 $ baud_clk $end
+$var reg 1 % data_tx $end
+$var reg 1 & reset $end
+$scope module uut $end
+$var wire 1 $ baud_clk $end
+$var wire 1 % data_tx $end
+$var wire 1 & reset $end
+$var reg 1 # active_flag $end
+$var reg 4 ' clock_count [3:0] $end
+$var reg 1 " done_flag $end
+$var reg 11 ( frame [10:0] $end
+$var reg 1 ) state $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+0)
+bx (
+b0 '
+1&
+1%
+0$
+0#
+0"
+bx !
+$end
+#5
+1$
+#10
+0$
+0&
+#15
+1$
+#20
+0$
+#25
+1$
+#30
+0$
+0%
+#35
+1#
+1)
+1$
+#40
+0$
+1%
+#45
+b1 '
+bx1 !
+bx1 (
+1$
+#50
+0$
+#55
+b10 '
+bx11 !
+bx11 (
+1$
+#60
+0$
+#65
+b11 '
+bx111 !
+bx111 (
+1$
+#70
+0$
+0%
+#75
+b100 '
+bx0111 !
+bx0111 (
+1$
+#80
+0$
+1%
+#85
+b101 '
+bx10111 !
+bx10111 (
+1$
+#90
+0$
+#95
+b110 '
+bx110111 !
+bx110111 (
+1$
+#100
+0$
+0%
+#105
+b111 '
+bx0110111 !
+bx0110111 (
+1$
+#110
+0$
+#115
+b1000 '
+bx00110111 !
+bx00110111 (
+1$
+#120
+0$
+1%
+#125
+b1001 '
+bx100110111 !
+bx100110111 (
+1$
+#130
+0$
+#135
+b1010 '
+bx1100110111 !
+bx1100110111 (
+1$
+#140
+0$
+#145
+0#
+1"
+0)
+b0 '
+b11100110111 !
+b11100110111 (
+1$
+#150
+0$
+#155
+1$
+#160
+0$
+#165
+1$
+#170
+0$
+#175
+1$
+#180
+0$
+#185
+1$
+#190
+0$
+#195
+1$
+#200
+0$
+#205
+1$
+#210
+0$
+#215
+1$
+#220
+0$
+#225
+1$
+#230
+0$
+#235
+1$
+#240
+0$
