@@ -17,11 +17,13 @@ Full Duplex UART
     baud rate : 115200
     clk per bit : ~87
 ### Parity Bit Unit:
-    Supports  3 parity types: No parity, ODD parity, Even Parity
-
+    Calculate the parity of the data input and send it to the PISO.
 ### PISO unit
+    2 states : Active and idle:  gets parallel data and sends serial data
 
-PISO unit
-SIPO Unit 
-Depframe Unit
-Error Check Unit
+### SIPO Unit 
+2 states : active and idle gets serial data and converts to parallel data 
+### Depframe Unit
+breaks the data_packet
+### Error Check Unit 
+checks parity 

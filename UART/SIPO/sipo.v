@@ -10,7 +10,7 @@ module sipo(
 parameter idle = 0, active=1;
 reg state;
 reg [3:0] clock_count;
-always @(posedge baud_clk or reset) begin
+always @(posedge baud_clk or posedge reset) begin
   if(reset) begin
     state <= idle;
     active_flag <= 0;
@@ -21,6 +21,7 @@ always @(posedge baud_clk or reset) begin
     case (state) 
     idle : begin
       active_flag <= 0;
+      done_flag <= 0;
 
       if(data_tx == 0) begin
         state <= active;
