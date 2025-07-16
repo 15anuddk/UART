@@ -1,0 +1,53 @@
+$date
+	Tue Jul 15 17:21:32 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module tb $end
+$var wire 1 ! parity_bit $end
+$var reg 8 " data_in [7:0] $end
+$var reg 2 # parity_type [1:0] $end
+$var reg 1 $ reset $end
+$scope module uut $end
+$var wire 8 % data_in [7:0] $end
+$var wire 2 & parity_type [1:0] $end
+$var wire 1 $ reset $end
+$var reg 1 ! parity_bit $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b0 &
+b10111 %
+1$
+b0 #
+b10111 "
+1!
+$end
+#10000
+b1111 "
+b1111 %
+0$
+#20000
+b1 #
+b1 &
+b10101111 "
+b10101111 %
+#30000
+0!
+b10 #
+b10 &
+b10101001 "
+b10101001 %
+#40000
+1!
+b11 #
+b11 &
+#50000
+b10111101 "
+b10111101 %
